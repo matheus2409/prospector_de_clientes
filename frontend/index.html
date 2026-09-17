@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Prospector Maps</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<div class="app">
+
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-sweep" aria-hidden="true"></div>
+      <svg class="brand-pin" width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M12 2C7.6 2 4 5.6 4 10c0 6 8 12 8 12s8-6 8-12c0-4.4-3.6-8-8-8Z" stroke="currentColor" stroke-width="1.6"/>
+        <circle cx="12" cy="10" r="2.6" fill="currentColor"/>
+      </svg>
+      <h1>Prospector <span>Maps</span></h1>
+    </div>
+    <div class="status-chips" id="statusChips"></div>
+  </header>
+
+  <section class="search-panel">
+    <form id="searchForm">
+      <div class="field">
+        <label for="query">Nicho / categoria</label>
+        <input type="text" id="query" name="query" placeholder="ex: barbearia" autocomplete="off" required>
+      </div>
+      <div class="field">
+        <label for="location">Localização</label>
+        <input type="text" id="location" name="location" placeholder="ex: São José do Rio Preto, SP" autocomplete="off" required>
+      </div>
+      <div class="field field-narrow">
+        <label for="maxResults">Máx. resultados</label>
+        <input type="number" id="maxResults" name="maxResults" min="1" max="200" value="60">
+      </div>
+      <button type="submit" id="startBtn" class="btn-primary">Iniciar Varredura</button>
+      <button type="button" id="cancelBtn" class="btn-secondary" hidden>Cancelar</button>
+      <button type="button" id="resumeBtn" class="btn-resume" hidden>Retomar</button>
+      <div class="field field-narrow">
+        <label for="scheduleFrequency">Repetir</label>
+        <select id="scheduleFrequency">
+          <option value="">Não repetir</option>
+          <option value="1">Diariamente</option>
+          <option value="7">Semanalmente</option>
+          <option value="30">Mensalmente</option>
+        </select>
+      </div>
+      <button type="button" id="scheduleBtn" class="btn-ghost" title="Agenda essa mesma busca (nicho + localização) pra repetir sozinha">+ Agendar</button>
+    </form>
+
+    <div class="job-history">
+      <label for="jobSelect">Varreduras anteriores</label>
+      <select id="jobSelect">
+        <option value="">— nenhuma selecionada —</option>
+      </select>
+    </div>
+
+    <div class="schedules-panel">
+      <button type="button" id="schedulesToggle" class="schedules-toggle">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 7v5l3 2M21 12a9 9 0 1 1-9-9" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Buscas agendadas
+        <span id="schedulesCount" class="badge" hidden>0</span>
+        <svg class="chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m6 9 6 6 6-6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <div class="schedules-body" id="schedulesBody" hidden>
+        <div class="schedules-list" id="schedulesList">
+          <p class="muted">Nenhuma busca agendada ainda. Preencha o nicho/localização acima, escolha uma frequência e clique em "+ Agendar".</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="console">
+    <div class="log-panel">
+      <div class="log-header">
+        <span class="log-dot" id="logDot" aria-hidden="true"></span>
+        <span id="logTitle">Aguardando início</span>
+      </div>
+      <div class="log-body" id="logBody"></div>
+    </div>
+
+    <div class="results-panel">
+      <div class="results-header">
+        <div class="results-title" id="resultsCount">0 leads</div>
+        <label class="toggle">
+          <input type="checkbox" id="onlyNoWebsite">
+          <span>Somente sem site</span>
+        </label>
+        <select id="statusFilter" class="status-filter" title="Filtrar por status">
+          <option value="">Todos os status</option>
+          <option value="novo">Novo</option>
+          <option value="contatado">Contatado</option>
+          <option value="interessado">Interessado</option>
+          <option value="sem_interesse">Sem interesse</option>
+          <option value="fechado">Fechado</option>
+        </select>
+        <div class="export-actions">
+          <button type="button" id="exportCsv" class="btn-ghost" disabled>Baixar CSV</button>
+          <button type="button" id="exportXlsx" class="btn-ghost" disabled>Baixar Excel</button>
+          <button type="button" id="exportSheets" class="btn-ghost" disabled>Enviar pro Sheets</button>
+          <button type="button" id="resendWebhook" class="btn-ghost" disabled>Reenviar Webhook</button>
+        </div>
+      </div>
+      <div class="stats-bar" id="statsBar" hidden></div>
+      <div class="table-wrap">
+        <table id="leadsTable">
+          <thead>
+            <tr>
+              <th class="col-marker"></th>
+              <th class="sortable" data-sort="name">Nome<span class="sort-indicator"></span></th>
+              <th class="sortable" data-sort="category">Categoria<span class="sort-indicator"></span></th>
+              <th>Telefone</th>
+              <th>Site</th>
+              <th>Endereço</th>
+              <th class="sortable" data-sort="rating">Avaliação<span class="sort-indicator"></span></th>
+              <th class="sortable" data-sort="status">Status<span class="sort-indicator"></span></th>
+              <th class="col-actions"></th>
+            </tr>
+          </thead>
+          <tbody id="leadsBody">
+            <tr class="empty-row"><td colspan="9"><div class="empty-state"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" stroke="currentColor" stroke-width="1.6"/><path d="M15.5 15.5 21 21" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg><p>Nenhuma varredura ainda. Preencha o nicho e a localização acima e clique em "Iniciar Varredura".</p></div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <div class="toast" id="toast" hidden></div>
+</div>
+
+<script src="/static/app.js"></script>
+</body>
+</html>

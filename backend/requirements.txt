@@ -1,0 +1,10 @@
+fastapi==0.141.1
+uvicorn[standard]==0.52.3
+sqlmodel==0.0.39
+playwright==1.62.0
+openpyxl==3.1.5
+gspread==6.2.1
+google-auth==2.56.3
+httpx==0.28.1
+python-dotenv==1.2.3
+python-multipart==0.0.32
